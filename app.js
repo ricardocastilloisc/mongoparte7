@@ -13,7 +13,7 @@ mongoose
   .then(() => console.log("conectado a mongoDb"))
   .catch((err) => console.log("no se pudo conectar", err));
 
-
+mongoose.set('useCreateIndex', true);
 const app = express();
 app.use(express.json())
 app.use(express.urlencoded({extended:true}));

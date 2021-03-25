@@ -20,7 +20,7 @@ ruta.post("/", (req, res) => {
         if (passwordValido) {
           const jwToken = jwt.sign(
             {
-              data: { _id: datos.id, nombre: datos.nombre, email: datos.email },
+              usuario: { _id: datos.id, nombre: datos.nombre, email: datos.email },
             },
             config.get('configToken.SEED'),
             { expiresIn: config.get('configToken.expiration') }
