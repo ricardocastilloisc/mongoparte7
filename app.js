@@ -1,13 +1,12 @@
 const usuario = require('./routes/usuario')
 const cursos = require('./routes/cursos')
+const auth = require('./routes/auth')
 const express = require("express");
 const mongoose = require("mongoose");
-
-
-
+const config = require('config')
 
 mongoose
-  .connect("mongodb://localhost/demo", {
+  .connect(config.get('configDB.HOST'), {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
@@ -15,13 +14,12 @@ mongoose
   .catch((err) => console.log("no se pudo conectar", err));
 
 
-
 const app = express();
 app.use(express.json())
 app.use(express.urlencoded({extended:true}));
 app.use('/api/usuarios', usuario);
 app.use('/api/cursos', cursos);
-
+app.use('/api/auth', auth)
 const port = process.env.PORT || 5000;
 
 app.listen(port, () => {

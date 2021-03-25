@@ -1,0 +1,10 @@
+{
+    "nombre": "Api Rest",
+    "configDB":{
+        "HOST":"mongodb://localhost/demo"
+    },
+    "configToken":{
+        "SEED": "secret",
+        "expiration": "24h"
+    }
+}

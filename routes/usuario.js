@@ -1,5 +1,10 @@
 const express = require("express");
+const jwt = require("jsonwebtoken");
+const config = require("config");
+const bcrypt = require("bcrypt");
 const ruta = express.Router();
+
+const verificarToken = require('../middlewares/auth')
 
 const Joi = require("@hapi/joi");
 
@@ -14,7 +19,9 @@ const schema = Joi.object({
   }),
 });
 
-ruta.get("/", (req, res) => {
+
+
+ruta.get("/", verificarToken, (req, res) => {
   let resultado = listarusuariosActivos();
   resultado
     .then((usuarios) => {
@@ -27,7 +34,7 @@ ruta.get("/", (req, res) => {
     });
 });
 
-ruta.put("/:email", (req, res) => {
+ruta.put("/:email", verificarToken, (req, res) => {
   const { error, value } = schema.validate({ nombre: req.body.nombre });
   if (!error) {
     let resultado = actulizarUsuario(req.params.email, req.body);
@@ -35,7 +42,8 @@ ruta.put("/:email", (req, res) => {
     resultado
       .then((valor) => {
         res.json({
-          valor: valor,
+          email: valor.email,
+          nombre: valor.nombre,
         });
       })
       .catch((err) => {
@@ -49,12 +57,13 @@ ruta.put("/:email", (req, res) => {
     });
   }
 });
-ruta.delete("/:email", (req, res) => {
+ruta.delete("/:email",  verificarToken,(req, res) => {
   let resultado = desactivarUsuario(req.params.email);
   resultado
     .then((valor) => {
       res.json({
-        usuario: valor,
+        email: valor.email,
+        nombre: valor.nombre,
       });
     })
     .catch((err) => {
@@ -66,6 +75,15 @@ ruta.delete("/:email", (req, res) => {
 
 ruta.post("/", (req, res) => {
   let body = req.body;
+  Usuario.findOne({ email: body.email }, (err, user) => {
+    if (err) {
+      return res.status(400).json({ error: "server error" });
+    }
+
+    if (user) {
+      return res.status(400).json({ msj: "El usuario ya existe" });
+    }
+  });
   const { error, value } = schema.validate({
     nombre: body.nombre,
     email: body.email,
@@ -75,7 +93,8 @@ ruta.post("/", (req, res) => {
     resultado
       .then((user) => {
         res.json({
-          valor: user,
+          email: user.email,
+          nombre: user.nombre,
         });
       })
       .catch((err) => {
@@ -94,13 +113,16 @@ crearUsuario = async (body) => {
   let usuario = new Usuario({
     email: body.email,
     nombre: body.nombre,
-    password: body.password,
+    password: bcrypt.hashSync(body.password, 10),
   });
   return await usuario.save();
 };
 
 listarusuariosActivos = async () => {
-  let usuarios = await Usuario.find({ estado: true });
+  let usuarios = await Usuario.find({ estado: true }).select({
+    nombre: 1,
+    email: 1,
+  });
   return usuarios;
 };
 actulizarUsuario = async (email, body) => {
@@ -109,7 +131,7 @@ actulizarUsuario = async (email, body) => {
     {
       $set: {
         nombre: body.nombre,
-        password: body.password,
+        password: bcrypt.hashSync(body.password, 10),
       },
     },
     {
@@ -117,6 +139,10 @@ actulizarUsuario = async (email, body) => {
     }
   );
   return usuario;
+};
+
+validarUsuario = async (email) => {
+  return await Usuario.findOne({ email: body.email });
 };
 
 desactivarUsuario = async (email) => {
